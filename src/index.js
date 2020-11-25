@@ -1,28 +1,29 @@
 import itemMenu from './menu.json';
 import itemTemplates from './templates/menu.hbs';
-// import ingredientsTemplates from './templates/ingredients.hbs';
+import ingredientsTemplates from './templates/ingredients.hbs';
 import './styles.css';
 
+const ShowAllIngredients = 'Всё меню';
 const Theme = {
   LIGHT: 'light-theme',
   DARK: 'dark-theme',
 };
 
-const createItem = itemTemplates(itemMenu);
-
 const refs = {
   menuRef: document.querySelector('.js-menu'),
   themeSwitchRef: document.querySelector('.theme-switch__toggle'),
   bodyRef: document.querySelector('body'),
+  menuButtonRef: document.querySelector('.js-menu__button'),
 };
 
 refs.themeSwitchRef.addEventListener('change', changeThemes);
 refs.themeSwitchRef.addEventListener('click', removeBodyClassForTheme);
-refs.menuRef.insertAdjacentHTML('beforeend', createItem);
+refs.menuButtonRef.addEventListener('click', onClickButtonMenu);
+refs.menuRef.addEventListener('click', onClickButtonMenu);
 
-getBodyClassForTheme();
+setBodyClassForTheme();
 
-function getBodyClassForTheme() {
+function setBodyClassForTheme() {
   const savedTheme = localStorage.getItem('theme');
   if (savedTheme === Theme.LIGHT) {
     refs.bodyRef.classList.add(Theme.LIGHT);
@@ -49,7 +50,64 @@ function changeThemes() {
   }
 }
 
-// const test = itemMenu.reduce((newElement, el) => {
-//   const newIngredients = el.ingredients.filter(el => !newElement.includes(el));
-//   return [...newElement, ...newIngredients];
-// }, []);
+setMenuList(ShowAllIngredients);
+
+function setMenuList(menuList) {
+  // console.log(menuList);
+  let receivedMenu = [];
+
+  if (menuList === ShowAllIngredients) {
+    receivedMenu = itemMenu.slice();
+  } else
+    receivedMenu = itemMenu.filter(element => {
+      if (element.ingredients.includes(menuList)) {
+        return true;
+      }
+      return false;
+    });
+
+  // console.log(receivedMenu);
+  console.log(menuList);
+  const menu = itemTemplates(receivedMenu);
+
+  // tagRef = document.querySelector('.tag-list');
+
+  refs.menuRef.innerHTML = '';
+  refs.menuRef.insertAdjacentHTML('beforeend', menu);
+
+  setMenuByFilter(receivedMenu);
+}
+
+function setMenuByFilter(receivedMenu) {
+  const selectedIngredients = receivedMenu.reduce(
+    (newFiltredMenu, { ingredients }) => {
+      const filtredIngredients = ingredients.filter(
+        ingrd => !newFiltredMenu.includes(ingrd),
+      );
+
+      return [...newFiltredMenu, ...filtredIngredients];
+    },
+    [],
+  );
+
+  const menuFiltredByIngredients = ingredientsTemplates([
+    ShowAllIngredients,
+    ...selectedIngredients,
+  ]);
+
+  // console.log(menuFiltredByIngredients);
+
+  refs.menuButtonRef.innerHTML = '';
+  refs.menuButtonRef.insertAdjacentHTML('beforeend', menuFiltredByIngredients);
+}
+
+function onClickButtonMenu(event) {
+  const menuList = event.target;
+  if (menuList.nodeName !== 'LI') {
+    return;
+  }
+
+  // console.log(menuList.nodeName === 'LI')
+
+  setMenuList(menuList.textContent);
+}
